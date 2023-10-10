@@ -1,16 +1,25 @@
-from os                 import listdir, mkdir, path, remove, rmdir
+from os                 import linesep, listdir, mkdir, path, remove, rmdir, system
 from sys                import argv
 from hashlib            import sha256
 from cv2                import VideoCapture, imwrite, CAP_PROP_FPS
 from pytube             import YouTube
 from pytube.exceptions  import AgeRestrictedError, VideoUnavailable
+from PIL                import Image
 
-# rm -rf .79e2452641e8997c436b2b0c630e01165c9e73c056e602942c45d81fa058649b ; python asclii-yt.py https://www.youtube.com/watch?v=OF_5EKNX0Eg 36x64
+# python asclii-yt.py https://www.youtube.com/watch?v=OF_5EKNX0Eg 64x36
 
 # Argv
 DIMS_IND        = 2
 GOOD_ARGV       = 3
 LINK_IND        = 1
+
+# Art
+ANSI_FN_CALL    = "\x1b["
+BLOCK           = "██"
+COLOUR_SEP      = ";"
+SET_RGB         = "38;2;"
+SGR             = "m"
+WIPE_SCREEN     = "clear"
 
 # Dimensions
 DIMS_DELIM      = "x"
@@ -47,6 +56,12 @@ def clean_frames(dirname):
     rmdir(dirname)
 
 
+def colour_pixel(colours):
+    rgb = COLOUR_SEP.join([str(v) for v in colours])
+
+    return ANSI_FN_CALL + SET_RGB + rgb + SGR + BLOCK
+
+
 def download(link):
     title = None
     try:
@@ -68,6 +83,36 @@ def download(link):
                 print(DOWNLOAD_FAIL)
 
     return title
+
+
+def flipbook(art, framerate):
+    for i in art:
+        system(WIPE_SCREEN)
+        print(i)
+        break
+
+
+def imgs_to_ansi(dirname, frames, framerate, dims):
+    ansis = []
+    for frame in range(frames):
+        img = Image.open(path.join(dirname, str(frame) + FRAME_EXTENSION))
+        img = img.resize(dims)
+        pix = img.load()
+        ansis.append(pix_to_ascii(pix, dims))
+        break
+
+    return ansis
+
+
+def pix_to_ascii(pix, dims):
+    width, height = dims
+    art = ""
+    for w in range(height):
+        for h in range(width):
+            art += colour_pixel(pix[h, w])
+        art += linesep
+
+    return art
 
 
 def pull_frames(name):
@@ -125,7 +170,9 @@ def main():
         print(ALREADY_EXISTS)
         exit(CANT_EXTRACT)
 
+    art = imgs_to_ansi(dirname, frame_count, framerate, (width, height))
     clean_frames(dirname)
+    flipbook(art, framerate)
 
 
 if __name__ == "__main__":
