@@ -1,7 +1,7 @@
 from os                 import listdir, mkdir, remove
 from sys                import argv
 from hashlib            import sha256
-from cv2                import VideoCapture, imwrite
+from cv2                import VideoCapture, imwrite, CAP_PROP_FPS
 from pytube             import YouTube
 from pytube.exceptions  import AgeRestrictedError, VideoUnavailable
 
@@ -17,6 +17,7 @@ DIMS_DELIM      = "x"
 
 # Error messages
 AGE_RESTRICTED  = "Age restricted videos cannot be downloaded"
+ALREADY_EXISTS  = "Could not create a temporary directory to extract video frames"
 BAD_ARGV        = "Usage: python3 asclii-yt.py link (width)x(height)"
 BAD_DIM_COUNT   = "Two numeric frame dimensions are required"
 BAD_LINK        = "Invalid youtube link provided"
@@ -28,6 +29,7 @@ F_NOT_SUPPORTED = "Only MP4 videos are supported presently"
 BAD_ARGS        = 1
 BAD_VID         = 2
 NOT_SUPPORTED   = 3
+CANT_EXTRACT    = 4
 
 # Video files
 BEST_EXTENSION  = "mp4"
@@ -59,14 +61,22 @@ def download(link):
 
 def pull_frames(name):
     dirname = sha256(name.encode("utf-8")).hexdigest()
-    mkdir(dirname)
-    vidcap = VideoCapture(name)
-    success, image = vidcap.read()
-    count = 0
-    while success:
-        imwrite(f"{dirname}/{count}.jpg", image)
+    count   = 0
+    frames  = 0
+    try:
+        mkdir(dirname)
+    except FileExistsError:
+        dirname = None
+    else:
+        vidcap = VideoCapture(name)
         success, image = vidcap.read()
-        count += 1
+        while success:
+            imwrite(f"{dirname}/{count}.jpg", image)
+            success, image = vidcap.read()
+            count += 1
+        frames = vidcap.get(CAP_PROP_FPS)
+
+    return dirname, count, frames
 
 
 def validate(argv):
@@ -91,14 +101,20 @@ def main():
     title   = download(argv[LINK_IND])
     if title is None:
         exit(BAD_VID)
+
     full    = list(filter(lambda p : p.startswith(title), listdir()))[0]
     extn    = full.split(EXTENSION_DELIM)[-1]
     if extn != BEST_EXTENSION:
         print(F_NOT_SUPPORTED)
         exit(NOT_SUPPORTED)
 
-    dirname = pull_frames(full)
+    dirname, frame_count, framerate = pull_frames(full)
     remove(full)
+    if dirname is None:
+        print(ALREADY_EXISTS)
+        exit(CANT_EXTRACT)
+    print(f"{frame_count} frames at {framerate} fps")
+
 
 
 if __name__ == "__main__":
