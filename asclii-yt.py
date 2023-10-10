@@ -2,12 +2,12 @@ from os                 import linesep, listdir, mkdir, path, remove, rmdir, sys
 from sys                import argv
 from datetime           import datetime
 from hashlib            import sha256
+from urllib.error       import URLError
 from cv2                import VideoCapture, imwrite, CAP_PROP_FPS
 from pytube             import YouTube
 from pytube.exceptions  import AgeRestrictedError, VideoUnavailable
 from PIL                import Image
 
-# python asclii-yt.py https://www.youtube.com/watch?v=OF_5EKNX0Eg 64x36
 
 # Argv
 DIMS_IND        = 2
@@ -32,6 +32,7 @@ BAD_ARGV        = "Usage: python3 asclii-yt.py link (width)x(height)"
 BAD_DIM_COUNT   = "Two numeric frame dimensions are required"
 BAD_LINK        = "Invalid youtube link provided"
 DOWNLOAD_FAIL   = "Video could not be downloaded"
+NO_INTERNET     = "Temporary failure in name resolution"
 NOT_A_LINK      = "Link provided is not a youtube video"
 F_NOT_SUPPORTED = "Only MP4 videos are supported presently"
 
@@ -73,6 +74,8 @@ def download(link):
         try:
             youtubeObject = youtubeObject.streams.get_highest_resolution()
             title = youtubeObject.title
+        except URLError:
+            print(NO_INTERNET)
         except AgeRestrictedError:
             print(AGE_RESTRICTED)
         except VideoUnavailable:
@@ -81,6 +84,7 @@ def download(link):
             try:
                 youtubeObject.download()
             except:
+                title = None
                 print(DOWNLOAD_FAIL)
 
     return title
@@ -161,6 +165,7 @@ def main():
     if title is None:
         exit(BAD_VID)
 
+    print(title, listdir())
     full    = list(filter(lambda p : p.startswith(title), listdir()))[0]
     extn    = full.split(EXTENSION_DELIM)[-1]
     if extn != BEST_EXTENSION:
