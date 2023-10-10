@@ -1,11 +1,11 @@
-from os                 import listdir, mkdir, remove
+from os                 import listdir, mkdir, path, remove, rmdir
 from sys                import argv
 from hashlib            import sha256
 from cv2                import VideoCapture, imwrite, CAP_PROP_FPS
 from pytube             import YouTube
 from pytube.exceptions  import AgeRestrictedError, VideoUnavailable
 
-# rm -rf a9c222dfa89d082b3008456c3c722146b0e508083b703a044cdfe11a900f23fc ; python asclii-yt.py https://www.youtube.com/watch?v=QohH89Eu5iM 36x64
+# rm -rf .a9c222dfa89d082b3008456c3c722146b0e508083b703a044cdfe11a900f23fc ; python asclii-yt.py https://www.youtube.com/watch?v=QohH89Eu5iM 36x64
 
 # Argv
 DIMS_IND        = 2
@@ -31,9 +31,20 @@ BAD_VID         = 2
 NOT_SUPPORTED   = 3
 CANT_EXTRACT    = 4
 
-# Video files
+# Pathing
+HIDDEN          = "."
+
+# File Extensions
 BEST_EXTENSION  = "mp4"
 EXTENSION_DELIM = "."
+FRAME_EXTENSION = ".jpg"
+
+
+def clean_frames(dirname):
+    names = listdir(dirname)
+    for name in names:
+        remove(path.join(dirname, name))
+    rmdir(dirname)
 
 
 def download(link):
@@ -60,7 +71,7 @@ def download(link):
 
 
 def pull_frames(name):
-    dirname = sha256(name.encode("utf-8")).hexdigest()
+    dirname = HIDDEN + sha256(name.encode("utf-8")).hexdigest()
     count   = 0
     frames  = 0
     try:
@@ -71,7 +82,7 @@ def pull_frames(name):
         vidcap = VideoCapture(name)
         success, image = vidcap.read()
         while success:
-            imwrite(f"{dirname}/{count}.jpg", image)
+            imwrite(path.join(dirname, str(count) + FRAME_EXTENSION), image)
             success, image = vidcap.read()
             count += 1
         frames = vidcap.get(CAP_PROP_FPS)
@@ -115,6 +126,7 @@ def main():
         exit(CANT_EXTRACT)
     print(f"{frame_count} frames at {framerate} fps")
 
+    clean_frames(dirname)
 
 
 if __name__ == "__main__":
