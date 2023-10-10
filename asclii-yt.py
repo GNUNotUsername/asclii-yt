@@ -46,9 +46,9 @@ CANT_EXTRACT    = 4
 HIDDEN          = "."
 
 # File Extensions
-BEST_EXTENSION  = "mp4"
 EXTENSION_DELIM = "."
 FRAME_EXTENSION = ".jpg"
+VID_EXTENSION   = ".mp4"
 
 
 def clean_frames(dirname):
@@ -73,7 +73,7 @@ def download(link):
     else:
         try:
             youtubeObject = youtubeObject.streams.get_highest_resolution()
-            title = youtubeObject.title
+            title = youtubeObject.title + VID_EXTENSION
         except URLError:
             print(NO_INTERNET)
         except AgeRestrictedError:
@@ -82,8 +82,12 @@ def download(link):
             print(NOT_A_LINK)
         else:
             try:
-                youtubeObject.download()
+                youtubeObject.download(filename = title)
             except:
+                try:
+                    remove(title)
+                except:
+                    pass
                 title = None
                 print(DOWNLOAD_FAIL)
 
@@ -165,15 +169,20 @@ def main():
     if title is None:
         exit(BAD_VID)
 
-    print(title, listdir())
+    """
+    print(listdir(), title)
     full    = list(filter(lambda p : p.startswith(title), listdir()))[0]
+
+    # Obsolete? TODO find if mkvs etc can be dlded in the first place
     extn    = full.split(EXTENSION_DELIM)[-1]
-    if extn != BEST_EXTENSION:
+    if extn != VID_EXTENSION:
+        print(extn)
         print(F_NOT_SUPPORTED)
         exit(NOT_SUPPORTED)
+    """
 
-    dirname, frame_count, framerate = pull_frames(full)
-    remove(full)
+    dirname, frame_count, framerate = pull_frames(title)
+    remove(title)
     if dirname is None:
         print(ALREADY_EXISTS)
         exit(CANT_EXTRACT)
