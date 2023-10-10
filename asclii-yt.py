@@ -1,5 +1,6 @@
 from os                 import linesep, listdir, mkdir, path, remove, rmdir, system
 from sys                import argv
+from datetime           import datetime
 from hashlib            import sha256
 from cv2                import VideoCapture, imwrite, CAP_PROP_FPS
 from pytube             import YouTube
@@ -86,10 +87,13 @@ def download(link):
 
 
 def flipbook(art, framerate):
+    frame_diff = 1 / framerate
     for i in art:
+        start_time = datetime.now()
         system(WIPE_SCREEN)
         print(i)
-        break
+        while ((datetime.now() - start_time).total_seconds() < frame_diff):
+            pass
 
 
 def imgs_to_ansi(dirname, frames, framerate, dims):
@@ -99,7 +103,6 @@ def imgs_to_ansi(dirname, frames, framerate, dims):
         img = img.resize(dims)
         pix = img.load()
         ansis.append(pix_to_ascii(pix, dims))
-        break
 
     return ansis
 
