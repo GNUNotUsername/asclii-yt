@@ -5,7 +5,7 @@ from cv2                import VideoCapture, imwrite, CAP_PROP_FPS
 from pytube             import YouTube
 from pytube.exceptions  import AgeRestrictedError, VideoUnavailable
 
-# rm -rf .a9c222dfa89d082b3008456c3c722146b0e508083b703a044cdfe11a900f23fc ; python asclii-yt.py https://www.youtube.com/watch?v=QohH89Eu5iM 36x64
+# rm -rf .79e2452641e8997c436b2b0c630e01165c9e73c056e602942c45d81fa058649b ; python asclii-yt.py https://www.youtube.com/watch?v=OF_5EKNX0Eg 36x64
 
 # Argv
 DIMS_IND        = 2
@@ -124,7 +124,6 @@ def main():
     if dirname is None:
         print(ALREADY_EXISTS)
         exit(CANT_EXTRACT)
-    print(f"{frame_count} frames at {framerate} fps")
 
     clean_frames(dirname)
 
