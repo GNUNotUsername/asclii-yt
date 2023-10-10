@@ -1,10 +1,11 @@
-from os                 import listdir
+from os                 import listdir, mkdir, remove
 from sys                import argv
+from hashlib            import sha256
+from cv2                import VideoCapture, imwrite
 from pytube             import YouTube
 from pytube.exceptions  import AgeRestrictedError, VideoUnavailable
 
-# https://www.youtube.com/watch?v=yhB3BgJyGl8 for testing
-
+# rm -rf a9c222dfa89d082b3008456c3c722146b0e508083b703a044cdfe11a900f23fc ; python asclii-yt.py https://www.youtube.com/watch?v=QohH89Eu5iM 36x64
 
 # Argv
 DIMS_IND        = 2
@@ -25,12 +26,12 @@ F_NOT_SUPPORTED = "Only MP4 videos are supported presently"
 
 # Exit values
 BAD_ARGS        = 1
-NOT_SUPPORTED   = 2
+BAD_VID         = 2
+NOT_SUPPORTED   = 3
 
 # Video files
 BEST_EXTENSION  = "mp4"
 EXTENSION_DELIM = "."
-
 
 
 def download(link):
@@ -56,8 +57,16 @@ def download(link):
     return title
 
 
-def get_vids():
-    return set(filter(lambda p : p.endswith(".mp4"), listdir()))
+def pull_frames(name):
+    dirname = sha256(name.encode("utf-8")).hexdigest()
+    mkdir(dirname)
+    vidcap = VideoCapture(name)
+    success, image = vidcap.read()
+    count = 0
+    while success:
+        imwrite(f"{dirname}/{count}.jpg", image)
+        success, image = vidcap.read()
+        count += 1
 
 
 def validate(argv):
@@ -80,13 +89,16 @@ def main():
         exit(BAD_ARGS)
 
     title   = download(argv[LINK_IND])
+    if title is None:
+        exit(BAD_VID)
     full    = list(filter(lambda p : p.startswith(title), listdir()))[0]
     extn    = full.split(EXTENSION_DELIM)[-1]
     if extn != BEST_EXTENSION:
         print(F_NOT_SUPPORTED)
         exit(NOT_SUPPORTED)
 
-    print("Supported :)")
+    dirname = pull_frames(full)
+    remove(full)
 
 
 if __name__ == "__main__":
