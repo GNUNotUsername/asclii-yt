@@ -2,7 +2,7 @@ from os                 import linesep, listdir, mkdir, path, remove, rmdir, sys
 from sys                import argv
 from datetime           import datetime
 from hashlib            import sha256
-#from playsound          import playsound
+from vlc                import MediaPlayer
 from urllib.error       import URLError
 from cv2                import VideoCapture, imwrite, CAP_PROP_FPS
 from pytube             import YouTube
@@ -64,6 +64,7 @@ def clean_components(dirname):
     names = listdir(dirname) # Should be just the audio by now mashallah
     for name in names:
         remove(path.join(dirname, name))
+    rmdir(dirname)
 
 
 def colour_pixel(colours):
@@ -197,8 +198,10 @@ def main():
     remove(title)
 
     art = imgs_to_ansi(dirname, frame_count, framerate, (width, height))
-    #playsound(audio)
+    audio_player = MediaPlayer(audio)
+    audio_player.play()
     flipbook(art, framerate)
+    audio_player.stop()
     clean_components(dirname)
 
 
