@@ -29,7 +29,7 @@ WIPE_SCREEN     = "clear"
 
 # Audio
 AUDIO_FNAME     = "audio.mp3"
-MP4_CODEC       = "libx264"
+AUDIO_OPS       = {"codec:v": "libx264"}
 
 # Dimensions
 DIMS_DELIM      = "x"
@@ -53,6 +53,7 @@ CANT_EXTRACT    = 4
 
 # Pathing
 HIDDEN          = "."
+STR_ENCODING    = "utf-8"
 
 # File Extensions
 EXTENSION_DELIM = "."
@@ -138,7 +139,7 @@ def pix_to_ascii(pix, dims):
 
 
 def pull_frames(name):
-    dirname = HIDDEN + sha256(name.encode("utf-8")).hexdigest()
+    dirname = HIDDEN + sha256(name.encode(STR_ENCODING)).hexdigest()
     count   = 0
     frames  = 0
     try:
@@ -159,7 +160,7 @@ def pull_frames(name):
 
 def rip_audio(dirname, video, frames):
     audio_path = path.join(dirname, AUDIO_FNAME)
-    ffmpeg = FFmpeg().option("y").input(video).output(audio_path, {"codec:v": MP4_CODEC})
+    ffmpeg = FFmpeg().input(video).output(audio_path, AUDIO_OPS)
     ffmpeg.execute()
 
     return audio_path
@@ -170,7 +171,8 @@ def validate(argv):
     if len(argv) == GOOD_ARGV:
         cands = argv[DIMS_IND].split(DIMS_DELIM)
         try:
-            width, height = filter(lambda d : d > 0, map(lambda x : int(x), cands))
+            width, height = filter(lambda d : d > 0,    \
+                    map(lambda x : int(x), cands))
         except ValueError:
             print(BAD_DIM_COUNT)
     else:
