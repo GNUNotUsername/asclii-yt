@@ -2,11 +2,16 @@ from os                 import linesep, listdir, mkdir, path, remove, rmdir, sys
 from sys                import argv
 from datetime           import datetime
 from hashlib            import sha256
+#from playsound          import playsound
 from urllib.error       import URLError
 from cv2                import VideoCapture, imwrite, CAP_PROP_FPS
 from pytube             import YouTube
 from pytube.exceptions  import AgeRestrictedError, VideoUnavailable
 from PIL                import Image
+from ffmpeg             import FFmpeg
+
+
+# https://www.youtube.com/watch?v=OF_5EKNX0Eg
 
 
 # Argv
@@ -21,6 +26,10 @@ COLOUR_SEP      = ";"
 SET_RGB         = "38;2;"
 SGR             = "m"
 WIPE_SCREEN     = "clear"
+
+# Audio
+AUDIO_FNAME     = "audio.mp3"
+MP4_CODEC       = "libx264"
 
 # Dimensions
 DIMS_DELIM      = "x"
@@ -51,11 +60,10 @@ FRAME_EXTENSION = ".jpg"
 VID_EXTENSION   = ".mp4"
 
 
-def clean_frames(dirname):
-    names = listdir(dirname)
+def clean_components(dirname):
+    names = listdir(dirname) # Should be just the audio by now mashallah
     for name in names:
         remove(path.join(dirname, name))
-    rmdir(dirname)
 
 
 def colour_pixel(colours):
@@ -107,10 +115,12 @@ def flipbook(art, framerate):
 def imgs_to_ansi(dirname, frames, framerate, dims):
     ansis = []
     for frame in range(frames):
-        img = Image.open(path.join(dirname, str(frame) + FRAME_EXTENSION))
+        nam = path.join(dirname, str(frame) + FRAME_EXTENSION)
+        img = Image.open(nam)
         img = img.resize(dims)
         pix = img.load()
         ansis.append(pix_to_ascii(pix, dims))
+        remove(nam)
 
     return ansis
 
@@ -146,6 +156,14 @@ def pull_frames(name):
     return dirname, count, frames
 
 
+def rip_audio(dirname, video, frames):
+    audio_path = path.join(dirname, AUDIO_FNAME)
+    ffmpeg = FFmpeg().option("y").input(video).output(audio_path, {"codec:v": MP4_CODEC})
+    ffmpeg.execute()
+
+    return audio_path
+
+
 def validate(argv):
     width, height = None, None
     if len(argv) == GOOD_ARGV:
@@ -165,31 +183,23 @@ def main():
     if width is None:
         exit(BAD_ARGS)
 
-    title   = download(argv[LINK_IND])
+    title = download(argv[LINK_IND])
     if title is None:
         exit(BAD_VID)
 
-    """
-    print(listdir(), title)
-    full    = list(filter(lambda p : p.startswith(title), listdir()))[0]
-
-    # Obsolete? TODO find if mkvs etc can be dlded in the first place
-    extn    = full.split(EXTENSION_DELIM)[-1]
-    if extn != VID_EXTENSION:
-        print(extn)
-        print(F_NOT_SUPPORTED)
-        exit(NOT_SUPPORTED)
-    """
-
     dirname, frame_count, framerate = pull_frames(title)
-    remove(title)
     if dirname is None:
+        # This will almost never happen organically
         print(ALREADY_EXISTS)
         exit(CANT_EXTRACT)
 
+    audio = rip_audio(dirname, title, framerate)
+    remove(title)
+
     art = imgs_to_ansi(dirname, frame_count, framerate, (width, height))
-    clean_frames(dirname)
+    #playsound(audio)
     flipbook(art, framerate)
+    clean_components(dirname)
 
 
 if __name__ == "__main__":
