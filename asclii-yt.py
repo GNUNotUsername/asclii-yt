@@ -10,6 +10,7 @@ from pytube.exceptions  import AgeRestrictedError, VideoUnavailable
 from PIL                import Image
 from ffmpeg             import FFmpeg
 
+from time               import sleep
 
 # https://www.youtube.com/watch?v=OF_5EKNX0Eg
 
@@ -186,9 +187,11 @@ def main():
     if width is None:
         exit(BAD_ARGS)
 
+    print("Downloading video")
     title = download(argv[LINK_IND])
     if title is None:
         exit(BAD_VID)
+    print("Download complete\nExtracting frames")
 
     dirname, frame_count, framerate = pull_frames(title)
     if dirname is None:
@@ -196,10 +199,15 @@ def main():
         print(ALREADY_EXISTS)
         exit(CANT_EXTRACT)
 
+    print("Extracting audio")
     audio = rip_audio(dirname, title, framerate)
     remove(title)
 
+    print("Extraction complete\nConverting images to ANSI")
     art = imgs_to_ansi(dirname, frame_count, framerate, (width, height))
+    print("Conversion complete")
+    sleep(2)
+
     audio_player = MediaPlayer(audio)
     audio_player.play()
     flipbook(art, framerate)
