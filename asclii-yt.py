@@ -12,8 +12,6 @@ from ffmpeg             import FFmpeg
 
 from time               import sleep
 
-# https://www.youtube.com/watch?v=OF_5EKNX0Eg
-
 
 # Argv
 DIMS_IND        = 2
