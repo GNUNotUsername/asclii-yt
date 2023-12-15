@@ -11,5 +11,9 @@ where:
 * ```<height>``` is the height of the picture to display in the terminal window.
 
 # Dependencies:
-* Idk I'll find out and update this later.
-* But there's a fair few of them.
+* ffmpeg
+* python-vlc
+* python-opencv
+* python-pytube
+* python-pillow
+* python-python-ffmpeg
